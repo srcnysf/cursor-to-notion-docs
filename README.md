@@ -1,0 +1,50 @@
+# Cursor to Notion Documentation Extension
+
+This extension allows you to create and manage documentation in Notion directly from Cursor IDE.
+
+## Setup
+
+The extension will guide you through the setup process when you first use it. You'll need:
+
+1. A Notion integration (create one at https://www.notion.so/my-integrations)
+2. The integration's API key
+3. A Notion page or database where you want to store the documentation
+4. Share your Notion page/database with the integration
+
+When you first run any Notion Docs command, the extension will prompt you for:
+
+- Your Notion API Key
+- Your target Notion Page ID
+- (Optional) A Notion Database ID
+
+## Features
+
+- Create documentation in Notion directly from Cursor
+- Update existing documentation
+- Sync project documentation with Notion pages
+- Command palette integration for quick documentation
+- Interactive setup wizard for configuration
+- Support for both page and database documentation
+
+## Usage
+
+1. Use the command palette (Cmd/Ctrl + Shift + P) and search for "Notion Docs"
+2. Select one of the available commands:
+   - Configure Settings
+   - Create New Doc
+   - Update Existing Doc
+   - Sync Project Docs
+
+## Commands
+
+- `Notion Docs: Configure Settings`: Configure or update your Notion credentials
+- `Notion Docs: Create New Documentation`: Create a new document in Notion
+- `Notion Docs: Update Existing Documentation`: Update an existing Notion document
+
+## Reconfiguring
+
+You can reconfigure your Notion settings at any time by:
+
+1. Opening the command palette
+2. Searching for "Notion Docs: Configure Settings"
+3. Following the setup wizard prompts

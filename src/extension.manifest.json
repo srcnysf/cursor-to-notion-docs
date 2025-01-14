@@ -1,0 +1,32 @@
+{
+  "name": "cursor_to_notion_docs",
+  "displayName": "Cursor to Notion Documentation",
+  "description": "Create and manage documentation in Notion directly from Cursor",
+  "version": "0.1.0",
+  "main": "extension.js",
+  "commands": [
+    {
+      "command": "cursor_to_notion_docs.configure",
+      "title": "Configure Notion Settings",
+      "category": "Notion"
+    },
+    {
+      "command": "cursor_to_notion_docs.createDoc",
+      "title": "Create New Documentation",
+      "category": "Notion"
+    },
+    {
+      "command": "cursor_to_notion_docs.updateDoc",
+      "title": "Update Existing Documentation",
+      "category": "Notion"
+    }
+  ],
+  "keybindings": [
+    {
+      "command": "cursor_to_notion_docs.createDoc",
+      "key": "ctrl+alt+n",
+      "mac": "cmd+alt+n",
+      "when": "editorTextFocus"
+    }
+  ]
+}

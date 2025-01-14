@@ -1,0 +1,57 @@
+{
+  "name": "cursor-to-notion-docs",
+  "displayName": "Cursor to Notion Documentation",
+  "version": "0.1.0",
+  "description": "Create and manage documentation in Notion directly from Cursor",
+  "publisher": "cursor",
+  "engines": {
+    "node": ">=18.0.0",
+    "vscode": "^1.60.0"
+  },
+  "keywords": [
+    "notion",
+    "documentation",
+    "cursor"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:cursor_to_notion_docs.configure",
+    "onCommand:cursor_to_notion_docs.createDoc",
+    "onCommand:cursor_to_notion_docs.updateDoc",
+    "onStartupFinished"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cursor_to_notion_docs.configure",
+        "title": "Notion: Configure Settings",
+        "category": "Notion"
+      },
+      {
+        "command": "cursor_to_notion_docs.createDoc",
+        "title": "Notion: Create New Documentation",
+        "category": "Notion"
+      },
+      {
+        "command": "cursor_to_notion_docs.updateDoc",
+        "title": "Notion: Update Existing Documentation",
+        "category": "Notion"
+      }
+    ]
+  },
+  "scripts": {
+    "install": "npm install"
+  },
+  "dependencies": {
+    "@notionhq/client": "^2.2.14",
+    "dotenv": "^16.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^16.0.0",
+    "@types/vscode": "^1.60.0",
+    "typescript": "^4.9.0"
+  }
+}
