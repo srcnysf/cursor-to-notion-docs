@@ -1,20 +1,137 @@
-# asd
+# Cursor to Notion Documentation Extension
 
-## Description
-[Enter description here]
+## Project Overview
+
+A VS Code extension that seamlessly integrates Cursor IDE with Notion for real-time documentation management. This extension enables automatic synchronization of documentation between your development environment and Notion workspace.
+
+## Technical Architecture
+
+### Core Components
+
+1. **Notion API Integration**
+
+   - Uses @notionhq/client v2.2.14
+   - Real-time synchronization with Notion pages
+
+   - Secure API key management
+
+2. **File System Watcher**
+
+   - Monitors .notion-docs file changes
+   - Debounced updates (2-second delay)
+   - Automatic synchronization
+
+3. **Command System**
+   - Configure: `cursor_to_notion_docs.configure`
+   - Create Doc: `cursor_to_notion_docs.createDoc`
+   - Update Doc: `cursor_to_notion_docs.updateDoc`
+
+### Configuration Management
+
+- Location: `~/.cursor/notion-config.json`
+- Stores:
+  - Notion API Key
+  - Default Page ID
+  - User preferences
+
+## Setup Instructions
+
+### Prerequisites
+
+- Node.js >=18.0.0
+- VS Code ^1.60.0
+- Notion API access
+
+### Installation Steps
+
+1. Install extension in VS Code
+2. Run "Notion: Configure Settings"
+3. Enter Notion API key
+4. Provide target page ID
 
 ## Features
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
 
-## Usage
-[Usage instructions here]
+### 1. Real-time Documentation Sync
 
-## Examples
+- Automatic updates on file changes
+- Markdown support
+- Error handling and notifications
+
+### 2. Configuration Management
+
+- Secure credential storage
+- Easy setup wizard
+- Connection verification
+
+### 3. Document Management
+
+- Create new documentation
+- Update existing pages
+- Template support
+
+## Usage Guide
+
+### Creating Documentation
+
+1. Command: "Notion: Create New Documentation"
+2. Enter document title
+3. Edit .notion-docs file
+4. Auto-saves to Notion
+
+### Updating Documentation
+
+1. Command: "Notion: Update Existing Documentation"
+2. Provide page ID
+3. Enter new content
+4. Changes sync automatically
+
+## Development
+
+### Project Structure
+
 ```
-[Code examples here]
+cursor-to-notion-docs/
+├── src/
+│   ├── extension.js       # Main extension logic
+│   └── extension.manifest.json
+├── package.json          # Dependencies and metadata
+├── .notion-docs         # Documentation file
+└── README.md            # Project readme
 ```
 
-## Additional Notes
-[Any additional notes here]
+### Key Functions
+
+- `setupFileWatcher`: Monitors document changes
+- `createNotionDoc`: Creates new Notion pages
+- `updateNotionDoc`: Updates existing pages
+- `initializeNotion`: Sets up Notion client
+
+## Error Handling
+
+- API connection failures
+- File system errors
+- Configuration issues
+- Sync conflicts
+
+## Future Enhancements
+
+1. Multiple document support
+2. Custom templates
+3. Offline mode
+4. Version history
+5. Collaborative editing
+
+## Support
+
+- GitHub Issues
+- Documentation
+- Community supportasdasd
+
+## License
+
+MIT License - Open source and free to use
+
+## Contributors
+
+- Initial development by Cursor team
+- Community contributions welcome
