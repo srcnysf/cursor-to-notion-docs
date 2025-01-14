@@ -4,6 +4,15 @@
   "version": "0.1.0",
   "description": "Create and manage documentation in Notion directly from Cursor",
   "publisher": "cursor",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/cursor-to-notion-docs"
+  },
+  "author": {
+    "name": "Your Name"
+  },
+  "license": "MIT",
   "engines": {
     "node": ">=18.0.0",
     "vscode": "^1.60.0"

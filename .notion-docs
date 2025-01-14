@@ -1,137 +1,52 @@
 # Cursor to Notion Documentation Extension
 
-## Project Overview
+This extension allows you to create and manage documentation in Notion directly from Cursor IDE.
 
-A VS Code extension that seamlessly integrates Cursor IDE with Notion for real-time documentation management. This extension enables automatic synchronization of documentation between your development environment and Notion workspace.
+## Setup
 
-## Technical Architecture
+The extension will guide you through the setup process when you first use it. You'll need:
 
-### Core Components
+1. A Notion integration (create one at https://www.notion.so/my-integrations)
+2. The integration's API key
+3. A Notion page or database where you want to store the documentation
+4. Share your Notion page/database with the integration
 
-1. **Notion API Integration**
+When you first run any Notion Docs command, the extension will prompt you for:
 
-   - Uses @notionhq/client v2.2.14
-   - Real-time synchronization with Notion pages
-
-   - Secure API key management
-
-2. **File System Watcher**
-
-   - Monitors .notion-docs file changes
-   - Debounced updates (2-second delay)
-   - Automatic synchronization
-
-3. **Command System**
-   - Configure: `cursor_to_notion_docs.configure`
-   - Create Doc: `cursor_to_notion_docs.createDoc`
-   - Update Doc: `cursor_to_notion_docs.updateDoc`
-
-### Configuration Management
-
-- Location: `~/.cursor/notion-config.json`
-- Stores:
-  - Notion API Key
-  - Default Page ID
-  - User preferences
-
-## Setup Instructions
-
-### Prerequisites
-
-- Node.js >=18.0.0
-- VS Code ^1.60.0
-- Notion API access
-
-### Installation Steps
-
-1. Install extension in VS Code
-2. Run "Notion: Configure Settings"
-3. Enter Notion API key
-4. Provide target page ID
+- Your Notion API Key
+- Your target Notion Page ID
+- (Optional) A Notion Database ID
 
 ## Features
 
-### 1. Real-time Documentation Sync
+- Create documentation in Notion directly from Cursor
+- Update existing documentation
+- Sync project documentation with Notion pages
+- Command palette integration for quick documentation
+- Interactive setup wizard for configuration
+- Support for both page and database documentation
 
-- Automatic updates on file changes
-- Markdown support
-- Error handling and notifications
+## Usage
 
-### 2. Configuration Management
+1. Use the command palette (Cmd/Ctrl + Shift + P) and search for "Notion Docs"
+2. Select one of the available commands:
+   - Configure Settings
+   - Create New Doc
+   - Update Existing Doc
+   - Sync Project Docs
 
-- Secure credential storage
-- Easy setup wizard
-- Connection verification
+## Commands
 
-### 3. Document Management
+- `Notion Docs: Configure Settings`: Configure or update your Notion credentials
+- `Notion Docs: Create New Documentation`: Create a new document in Notion
+- `Notion Docs: Update Existing Documentation`: Update an existing Notion document
 
-- Create new documentation
-- Update existing pages
-- Template support
+## Reconfiguring
 
-## Usage Guide
+You can reconfigure your Notion settings at any time by:
 
-### Creating Documentation
+1. Opening the command paletteasdsad
+2. Searching for "Notion Docs: Configure Settings"asdasd
+3. Following the setup wizard prompts
 
-1. Command: "Notion: Create New Documentation"
-2. Enter document title
-3. Edit .notion-docs file
-4. Auto-saves to Notion
-
-### Updating Documentation
-
-1. Command: "Notion: Update Existing Documentation"
-2. Provide page ID
-3. Enter new content
-4. Changes sync automatically
-
-## Development
-
-### Project Structure
-
-```
-cursor-to-notion-docs/
-├── src/
-│   ├── extension.js       # Main extension logic
-│   └── extension.manifest.json
-├── package.json          # Dependencies and metadata
-├── .notion-docs         # Documentation file
-└── README.md            # Project readme
-```
-
-### Key Functions
-
-- `setupFileWatcher`: Monitors document changes
-- `createNotionDoc`: Creates new Notion pages
-- `updateNotionDoc`: Updates existing pages
-- `initializeNotion`: Sets up Notion client
-
-## Error Handling
-
-- API connection failures
-- File system errors
-- Configuration issues
-- Sync conflicts
-
-## Future Enhancements
-
-1. Multiple document support
-2. Custom templates
-3. Offline mode
-4. Version history
-5. Collaborative editing
-
-## Support
-
-- GitHub Issues
-- Documentation
-- Community supportasdasd
-
-## License
-
-MIT License - Open source and free to use
-
-## Contributors
-
-- Initial development by Cursor team
-- Community contributions welcome
+asdasds

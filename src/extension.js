@@ -1,21 +1,64 @@
+const vscode = require("vscode");
 const { Client } = require("@notionhq/client");
-const dotenv = require("dotenv");
 const path = require("path");
 const fs = require("fs").promises;
-const vscode = require("vscode");
+const dotenv = require("dotenv");
 
-let notion;
+// Global değişkenleri tanımla
+let notion = null;
 let currentDocWatcher = null;
 let currentTitle = null;
 let debounceTimer = null;
+let initialized = false;
 
-// Configuration management
-async function getConfiguration() {
+// URL'den page ID çıkaran yardımcı fonksiyon
+function extractPageIdFromUrl(pageUrl) {
+  try {
+    let pageId;
+
+    // URL'den query parametrelerini temizle
+    const urlWithoutQuery = pageUrl.split("?")[0];
+
+    // Farklı URL formatlarını kontrol et
+    if (urlWithoutQuery.includes("-")) {
+      // Format: workspace/Page-Name-ID
+      const urlParts = urlWithoutQuery.split("-");
+      pageId = urlParts[urlParts.length - 1];
+    } else {
+      // Format: workspace/PageName-ID veya workspace/ID
+      const lastPart = urlWithoutQuery.split("/").pop();
+
+      // Eğer son kısımda tire varsa, son parçayı al
+      if (lastPart.includes("-")) {
+        pageId = lastPart.split("-").pop();
+      } else {
+        pageId = lastPart;
+      }
+    }
+
+    // Sadece alfanumerik karakterleri tut
+    pageId = pageId.replace(/[^a-zA-Z0-9]/g, "");
+
+    // ID uzunluğunu kontrol et (Notion ID'leri 32 karakter)
+    if (pageId.length !== 32) {
+      throw new Error("Invalid Notion page URL format");
+    }
+
+    return pageId;
+  } catch (error) {
+    throw new Error(
+      "Could not extract page ID from URL. Please make sure you copied the entire Notion page URL."
+    );
+  }
+}
+
+// Configuration management fonksiyonlarını güncelle
+async function getGlobalConfiguration() {
   try {
     const configPath = path.join(
       process.env.HOME,
       ".cursor",
-      "notion-config.json"
+      "notion-global-config.json"
     );
     const config = await fs.readFile(configPath, "utf8");
     return JSON.parse(config);
@@ -24,20 +67,55 @@ async function getConfiguration() {
   }
 }
 
-async function saveConfiguration(config) {
+async function saveGlobalConfiguration(config) {
   const configPath = path.join(
     process.env.HOME,
     ".cursor",
-    "notion-config.json"
+    "notion-global-config.json"
   );
   await fs.mkdir(path.dirname(configPath), { recursive: true });
   await fs.writeFile(configPath, JSON.stringify(config, null, 2));
 }
 
-// Setup wizard
-async function setupWizard(window) {
+async function getProjectConfiguration() {
   try {
-    const config = {};
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+      throw new Error("No workspace folder open");
+    }
+
+    const configPath = path.join(
+      workspaceFolders[0].uri.fsPath,
+      ".notion-config.json"
+    );
+    const config = await fs.readFile(configPath, "utf8");
+    return JSON.parse(config);
+  } catch (error) {
+    return null;
+  }
+}
+
+async function saveProjectConfiguration(config) {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (!workspaceFolders) {
+    throw new Error("No workspace folder open");
+  }
+
+  const configPath = path.join(
+    workspaceFolders[0].uri.fsPath,
+    ".notion-config.json"
+  );
+  await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+}
+
+// setupWizard fonksiyonunu güncelle
+async function setupWizard(window) {
+  // Önce global config'i kontrol et
+  let globalConfig = await getGlobalConfiguration();
+
+  // API key yoksa iste
+  if (!globalConfig || !globalConfig.NOTION_API_KEY) {
+    globalConfig = { NOTION_API_KEY: null };
 
     const apiKey = await window.showInputBox({
       prompt:
@@ -49,37 +127,136 @@ async function setupWizard(window) {
       throw new Error("Notion API Key is required");
     }
 
-    config.NOTION_API_KEY = apiKey;
-
-    const pageId = await window.showInputBox({
-      prompt: "Enter your Notion Page ID (the ID from your Notion page URL)",
-      placeHolder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    });
-
-    if (!pageId) {
-      throw new Error("Notion Page ID is required");
-    }
-
-    config.NOTION_PAGE_ID = pageId;
-
-    await saveConfiguration(config);
-    return config;
-  } catch (error) {
-    throw error;
+    globalConfig.NOTION_API_KEY = apiKey;
+    await saveGlobalConfiguration(globalConfig);
   }
+
+  // Her durumda yeni page URL'si iste
+  const pageUrl = await window.showInputBox({
+    prompt: "Enter your Notion page URL for this project",
+    placeHolder: "https://www.notion.so/workspace/Your-Page-Name-123456789...",
+  });
+
+  if (!pageUrl) {
+    throw new Error("Notion Page URL is required");
+  }
+
+  // Proje konfigürasyonunu kaydet
+  const projectConfig = {
+    NOTION_PAGE_ID: extractPageIdFromUrl(pageUrl),
+  };
+  await saveProjectConfiguration(projectConfig);
+
+  // İlk konfigürasyondan sonra otomatik olarak .notion-docs oluştur
+  const defaultTemplate = `# ${
+    vscode.workspace.name || "Project"
+  } Documentation\n\n${getDefaultTemplate()}`;
+  await createNotionDocsFile(defaultTemplate);
+  await setupFileWatcher("Documentation", projectConfig.NOTION_PAGE_ID);
+
+  // Her iki config'i birleştirip dön
+  return {
+    ...globalConfig,
+    ...projectConfig,
+  };
+}
+
+// createDocCommand'ı güncelle - URL'yi bir kez soracak şekilde
+const createDocCommand = vscode.commands.registerCommand(
+  "cursor_to_notion_docs.createDoc",
+  async () => {
+    try {
+      if (!initialized) {
+        const success = await initializeNotion(vscode.window);
+        if (!success) return;
+        initialized = true;
+      }
+
+      const title = await vscode.window.showInputBox({
+        prompt: "Enter documentation title",
+      });
+
+      if (!title) return;
+
+      // Proje konfigürasyonunu kontrol et
+      let projectConfig = await getProjectConfiguration();
+
+      // Eğer proje konfigürasyonu yoksa veya page ID eksikse, sadece o zaman URL iste
+      if (!projectConfig || !projectConfig.NOTION_PAGE_ID) {
+        const pageUrl = await vscode.window.showInputBox({
+          prompt: "Enter the Notion page URL for this documentation",
+          placeHolder:
+            "https://www.notion.so/workspace/Your-Page-Name-123456789...",
+        });
+
+        if (!pageUrl) {
+          throw new Error("Notion Page URL is required");
+        }
+
+        projectConfig = {
+          NOTION_PAGE_ID: extractPageIdFromUrl(pageUrl),
+        };
+        await saveProjectConfiguration(projectConfig);
+      }
+
+      // Dokümantasyon şablonu oluştur
+      const docTemplate = `# ${title}\n\n${getDefaultTemplate()}`;
+
+      // .notion-docs dosyası oluştur
+      await createNotionDocsFile(docTemplate);
+
+      // File watcher'ı kur
+      await setupFileWatcher(title, projectConfig.NOTION_PAGE_ID);
+
+      vscode.window.showInformationMessage(
+        "Documentation created! File is now being watched for changes."
+      );
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        "Failed to create documentation: " + error.message
+      );
+    }
+  }
+);
+
+// Şablon içeriğini ayrı bir fonksiyona al
+function getDefaultTemplate() {
+  return `## Project Overview
+A VS Code extension that seamlessly integrates Cursor IDE with Notion for real-time documentation management...`;
+  // ... (mevcut şablon içeriği)
 }
 
 // Initialize Notion client
 async function initializeNotion(window) {
   try {
-    let config = await getConfiguration();
+    let globalConfig = await getGlobalConfiguration();
+    let projectConfig = await getProjectConfiguration();
 
-    if (!config || !config.NOTION_API_KEY || !config.NOTION_PAGE_ID) {
-      config = await setupWizard(window);
+    // Global config yoksa veya API key eksikse setup wizard'ı çalıştır
+    if (!globalConfig || !globalConfig.NOTION_API_KEY) {
+      const config = await setupWizard(window);
+      globalConfig = { NOTION_API_KEY: config.NOTION_API_KEY };
     }
 
+    // Proje config'i yoksa veya page ID eksikse sadece page ID iste
+    if (!projectConfig || !projectConfig.NOTION_PAGE_ID) {
+      const pageUrl = await window.showInputBox({
+        prompt: "Enter your Notion page URL for this project",
+        placeHolder:
+          "https://www.notion.so/workspace/Your-Page-Name-123456789...",
+      });
+
+      if (!pageUrl) {
+        throw new Error("Notion Page URL is required");
+      }
+
+      projectConfig = { NOTION_PAGE_ID: extractPageIdFromUrl(pageUrl) };
+      await saveProjectConfiguration(projectConfig);
+    }
+
+    // Notion client'ı oluştur
     notion = new Client({
-      auth: config.NOTION_API_KEY,
+      auth: globalConfig.NOTION_API_KEY,
     });
 
     const isConnected = await verifyNotionConnection();
@@ -360,7 +537,7 @@ async function createNotionDocsFile(content) {
   return content;
 }
 
-async function setupFileWatcher(title) {
+async function setupFileWatcher(title, pageId) {
   // Clear any existing watcher
   if (currentDocWatcher) {
     currentDocWatcher.dispose();
@@ -392,14 +569,20 @@ async function setupFileWatcher(title) {
 
     debounceTimer = setTimeout(async () => {
       try {
-        const config = await getConfiguration();
-        if (!config) {
+        // getConfiguration yerine global ve proje konfigürasyonlarını kullan
+        const globalConfig = await getGlobalConfiguration();
+        const projectConfig = await getProjectConfiguration();
+
+        if (!globalConfig || !projectConfig) {
           throw new Error("Notion configuration not found");
         }
 
         const content = await fs.readFile(notionDocsPath, "utf8");
 
-        await updateNotionDoc(config.NOTION_PAGE_ID, content);
+        // pageId parametresini veya proje konfigürasyonundaki ID'yi kullan
+        const targetPageId = pageId || projectConfig.NOTION_PAGE_ID;
+
+        await updateNotionDoc(targetPageId, content);
         vscode.window.showInformationMessage(
           "Documentation auto-updated in Notion!"
         );
@@ -415,8 +598,6 @@ async function setupFileWatcher(title) {
 }
 
 async function activate(context) {
-  let initialized = false;
-
   // Başlangıçta Notion'ı başlat ve dosya izleyiciyi kur
   async function initializeExtension() {
     try {
@@ -476,169 +657,6 @@ async function activate(context) {
       } catch (error) {
         vscode.window.showErrorMessage(
           `Configuration failed: ${error.message}`
-        );
-      }
-    }
-  );
-
-  const createDocCommand = vscode.commands.registerCommand(
-    "cursor_to_notion_docs.createDoc",
-    async () => {
-      try {
-        if (!initialized) {
-          const success = await initializeNotion(vscode.window);
-          if (!success) return;
-          initialized = true;
-        }
-
-        const config = await getConfiguration();
-        if (!config) {
-          vscode.window.showErrorMessage(
-            "Please configure Notion settings first"
-          );
-          return;
-        }
-
-        const title = await vscode.window.showInputBox({
-          prompt: "Enter documentation title",
-        });
-
-        if (!title) return;
-
-        // Dokümantasyon şablonu
-        const docTemplate = `# Cursor to Notion Documentation Extension
-
-## Project Overview
-A VS Code extension that seamlessly integrates Cursor IDE with Notion for real-time documentation management. This extension enables automatic synchronization of documentation between your development environment and Notion workspace.
-
-## Technical Architecture
-
-### Core Components
-1. **Notion API Integration**
-   - Uses @notionhq/client v2.2.14
-   - Real-time synchronization with Notion pages
-   - Secure API key management
-
-2. **File System Watcher**
-   - Monitors .notion-docs file changes
-   - Debounced updates (2-second delay)
-   - Automatic synchronization
-
-3. **Command System**
-   - Configure: \`cursor_to_notion_docs.configure\`
-   - Create Doc: \`cursor_to_notion_docs.createDoc\`
-   - Update Doc: \`cursor_to_notion_docs.updateDoc\`
-
-### Configuration Management
-- Location: \`~/.cursor/notion-config.json\`
-- Stores:
-  - Notion API Key
-  - Default Page ID
-  - User preferences
-
-## Setup Instructions
-
-### Prerequisites
-- Node.js >=18.0.0
-- VS Code ^1.60.0
-- Notion API access
-
-### Installation Steps
-1. Install extension in VS Code
-2. Run "Notion: Configure Settings"
-3. Enter Notion API key
-4. Provide target page ID
-
-## Features
-
-### 1. Real-time Documentation Sync
-- Automatic updates on file changes
-- Markdown support
-- Error handling and notifications
-
-### 2. Configuration Management
-- Secure credential storage
-- Easy setup wizard
-- Connection verification
-
-### 3. Document Management
-- Create new documentation
-- Update existing pages
-- Template support
-
-## Usage Guide
-
-### Creating Documentation
-1. Command: "Notion: Create New Documentation"
-2. Enter document title
-3. Edit .notion-docs file
-4. Auto-saves to Notion
-
-### Updating Documentation
-1. Command: "Notion: Update Existing Documentation"
-2. Provide page ID
-3. Enter new content
-4. Changes sync automatically
-
-## Development
-
-### Project Structure
-\`\`\`
-cursor-to-notion-docs/
-├── src/
-│   ├── extension.js       # Main extension logic
-│   └── extension.manifest.json
-├── package.json          # Dependencies and metadata
-├── .notion-docs         # Documentation file
-└── README.md            # Project readme
-\`\`\`
-
-### Key Functions
-- \`setupFileWatcher\`: Monitors document changes
-- \`createNotionDoc\`: Creates new Notion pages
-- \`updateNotionDoc\`: Updates existing pages
-- \`initializeNotion\`: Sets up Notion client
-
-## Error Handling
-- API connection failures
-- File system errors
-- Configuration issues
-- Sync conflicts
-
-## Future Enhancements
-1. Multiple document support
-2. Custom templates
-3. Offline mode
-4. Version history
-5. Collaborative editing
-
-## Support
-- GitHub Issues
-- Documentation
-- Community support
-
-## License
-MIT License - Open source and free to use
-
-## Contributors
-- Initial development by Cursor team
-- Community contributions welcome
-`;
-
-        // .notion-docs dosyası oluştur
-        await createNotionDocsFile(docTemplate);
-
-        // Setup the file watcher after creating the file
-        await setupFileWatcher(title);
-
-        vscode.window.showInformationMessage(
-          "Documentation created! File is now being watched for changes."
-        );
-
-        // Remove the "Publish" button logic since we're auto-updating now
-      } catch (error) {
-        vscode.window.showErrorMessage(
-          "Failed to create documentation: " + error.message
         );
       }
     }
