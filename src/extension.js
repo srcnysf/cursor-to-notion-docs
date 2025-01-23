@@ -3,6 +3,7 @@ const { Client } = require("@notionhq/client");
 const path = require("path");
 const fs = require("fs").promises;
 const dotenv = require("dotenv");
+const os = require("os");
 
 // Global değişkenleri tanımla
 let notion = null;
@@ -56,7 +57,7 @@ function extractPageIdFromUrl(pageUrl) {
 async function getGlobalConfiguration() {
   try {
     const configPath = path.join(
-      process.env.HOME,
+      os.homedir(),
       ".cursor",
       "notion-global-config.json"
     );
@@ -69,7 +70,7 @@ async function getGlobalConfiguration() {
 
 async function saveGlobalConfiguration(config) {
   const configPath = path.join(
-    process.env.HOME,
+    os.homedir(),
     ".cursor",
     "notion-global-config.json"
   );

@@ -2,7 +2,7 @@
   "name": "cursor_to_notion_docs",
   "displayName": "Cursor to Notion Documentation",
   "description": "Create and manage documentation in Notion directly from Cursor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "extension.js",
   "commands": [
     {

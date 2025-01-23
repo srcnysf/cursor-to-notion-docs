@@ -1,16 +1,16 @@
 {
   "name": "cursor-to-notion-docs",
   "displayName": "Cursor to Notion Documentation",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Create and manage documentation in Notion directly from Cursor",
-  "publisher": "cursor",
+  "publisher": "srcnysf",
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/cursor-to-notion-docs"
+    "url": "https://github.com/srcnysf/cursor-to-notion-docs"
   },
   "author": {
-    "name": "Your Name"
+    "name": "Sercan Yusuf"
   },
   "license": "MIT",
   "engines": {
@@ -52,7 +52,11 @@
     ]
   },
   "scripts": {
-    "install": "npm install"
+    "install": "npm install",
+    "watch": "tsc -watch -p ./",
+    "compile": "tsc -p ./",
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.14",
@@ -61,6 +65,7 @@
   "devDependencies": {
     "@types/node": "^16.0.0",
     "@types/vscode": "^1.60.0",
-    "typescript": "^4.9.0"
+    "typescript": "^4.9.0",
+    "@vscode/vsce": "^2.24.0"
   }
 }

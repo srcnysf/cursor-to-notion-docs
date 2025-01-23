@@ -9,7 +9,7 @@ The extension will guide you through the setup process when you first use it. Yo
 1. A Notion integration (create one at https://www.notion.so/my-integrations)
 2. The integration's API key
 3. A Notion page or database where you want to store the documentation
-4. Share your Notion page/database with the integration
+4. Share your Notion page/database with the integrationadsasds
 
 When you first run any Notion Docs command, the extension will prompt you for:
 
